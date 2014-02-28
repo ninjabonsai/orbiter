@@ -40,7 +40,7 @@
         document.body.appendChild(canvas);
         canvas.width = w;
         canvas.height = h;
-        //                canvas.style.backgroundColor = '#000';
+        canvas.style.backgroundColor = '#000';
 
         if (isTouchDevice) {
             canvas.addEventListener("touchstart", touchEvent);
@@ -66,7 +66,7 @@
         renderItem(sun);
 
         // planets
-                planetBurst({xPos: Math.random() * w - w / 2, yPos: Math.random() * h - h / 2});
+        planetBurst({xPos: w / 4, yPos: h / 4}, true);
 
         len = planetsArray.length;
 
@@ -123,8 +123,15 @@
         planetBurst(pos);
     }
 
-    function planetBurst(pos) {
+    function planetBurst(pos, spiralFromSun) {
         var l = Math.random() * 70 | 0 + 30;
+
+        if (spiralFromSun) {
+            l = 90;
+        }
+
+        pos.xPos /= currentScale;
+        pos.yPos /= currentScale;
 
         var dist = Math.sqrt(pos.xPos * pos.xPos + pos.yPos * pos.yPos);
 
@@ -139,7 +146,13 @@
             var ranBlue = Math.random() * 255 | 0;
             var ranMass = Math.random() * 6 | 0;
 
-            var orbitData = getSteadyOrbit(angle + Math.PI * 2 / l * i, dist + dist / l * i);
+            var orbitData;
+
+            if (spiralFromSun) {
+                orbitData = getSteadyOrbit(angle + Math.PI * 4 / l * i, sun.r * 2 + (dist / l * i));
+            } else {
+                orbitData = getSteadyOrbit(angle + Math.PI * 4 / l * i, dist + dist / l * i);
+            }
 
             callCreatePlanet(orbitData, i, ranGreen, ranBlue, ranMass);
         }
