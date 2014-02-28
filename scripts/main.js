@@ -1,11 +1,11 @@
-(function(){
+(function () {
     var isTouchDevice = 'ontouchstart' in document.documentElement;
 
-    window.requestAnimFrame = (function(){
-        return  window.requestAnimationFrame       ||
+    window.requestAnimFrame = (function () {
+        return  window.requestAnimationFrame ||
             window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame    ||
-            function( callback ){
+            window.mozRequestAnimationFrame ||
+            function (callback) {
                 window.setTimeout(callback, 1000 / 60);
             };
     })();
@@ -58,19 +58,15 @@
         scaleCanvas(canvas, ctx);
 
         // sun
-        sun = new Planet(0, 0, 10, {r: 255, g: 255, b: 0}, 1, 400);
+        sun = new Planet(0, 0, 10, [255, 255, 0], 1, 400);
         sun.vx = 0;
         sun.vy = 0;
         planetsArray.push(sun);
 
         renderItem(sun);
 
-        var count = (window.innerWidth <= 1024) ? 40 : 200;
-
         // planets
-        for (var i = 0; i < count; i++) {
-            createPlanet(Math.random() * w - w / 2 | 0, Math.random() * h - h / 2 | 0);
-        }
+                planetBurst({xPos: Math.random() * w - w / 2, yPos: Math.random() * h - h / 2});
 
         len = planetsArray.length;
 
@@ -96,7 +92,12 @@
                 break;
             case "touchend" :
                 if (!wasZoom) {
-                    planetBurst(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+                    var pos = {xPos: e.changedTouches[0].pageX, yPos: e.changedTouches[0].pageY};
+
+                    pos.xPos -= w / 2;
+                    pos.yPos -= h / 2;
+
+                    planetBurst(pos);
                 }
                 break;
             default :
@@ -114,15 +115,57 @@
             return;
         }
 
-        planetBurst(e.pageX, e.pageY);
+        var pos = {xPos: e.pageX, yPos: e.pageY};
+
+        pos.xPos -= w / 2;
+        pos.yPos -= h / 2;
+
+        planetBurst(pos);
     }
 
-    function planetBurst(xPos, yPos) {
-        for (var i = 0; i < 20; i++) {
-            createPlanet((xPos - w / 2) / currentScale + Math.random() * 80 - 40, (yPos - h / 2) / currentScale + Math.random() * 80 - 40);
+    function planetBurst(pos) {
+        var l = Math.random() * 70 | 0 + 30;
+
+        var dist = Math.sqrt(pos.xPos * pos.xPos + pos.yPos * pos.yPos);
+
+        var angle = Math.atan2(pos.yPos, pos.xPos);
+
+        if (dist < sun.r * 8) {
+            dist = sun.r * 8;
         }
 
-        len = planetsArray.length;
+        for (var i = 0; i < l; i++) {
+            var ranGreen = Math.random() * 255 | 0;
+            var ranBlue = Math.random() * 255 | 0;
+            var ranMass = Math.random() * 6 | 0;
+
+            var orbitData = getSteadyOrbit(angle + Math.PI * 2 / l * i, dist + dist / l * i);
+
+            callCreatePlanet(orbitData, i, ranGreen, ranBlue, ranMass);
+        }
+    }
+
+    function callCreatePlanet(orbitData, i, ranGreen, ranBlue, ranMass) {
+        setTimeout(function () {
+            createPlanet(orbitData.xPos, orbitData.yPos, ranGreen, ranBlue, ranMass, orbitData.vx, orbitData.vy);
+        }, i * 50);
+    }
+
+    function getSteadyOrbit(angle, distance) {
+        var xPos = Math.cos(angle) * distance,
+            yPos = Math.sin(angle) * distance;
+
+        var totalDistance = Math.abs(xPos) + Math.abs(yPos);
+
+        var df = distance / 1500;
+
+        var speed = 2.5;
+
+        // apply velocity values that should result in a clockwise orbit around the sun
+        var vx = yPos / totalDistance * -(speed - df * speed),
+            vy = xPos / totalDistance * (speed - df * speed);
+
+        return {xPos: xPos, yPos: yPos, vx: vx, vy: vy};
     }
 
     function limitScale() {
@@ -130,13 +173,11 @@
         currentScale = Math.min(5, currentScale);
     }
 
-    function createPlanet(xPos, yPos) {
-        var ranGreen = Math.random() * 255 | 0;
-        var ranBlue = Math.random() * 255 | 0;
-        var ranAlpha = Math.random();
-
-        var b = new Planet(xPos, yPos, Math.random() * 6 | 0, {r: 0, g: ranGreen, b: ranBlue}, 1);
+    function createPlanet(xPos, yPos, ranGreen, ranBlue, ranMass, ranVx, ranVy) {
+        var b = new Planet(xPos, yPos, ranMass, [0, ranGreen, ranBlue], 1, ranMass, ranVx, ranVy);
         planetsArray.push(b);
+
+        len++;
     }
 
     function resizeEvent(e) {
@@ -239,7 +280,7 @@
                     scaleAmount = .25;
                 }
 
-                partA.r =  partA.r + partB.r * scaleAmount;
+                partA.r = partA.r + partB.r * scaleAmount;
                 partA.mass += partB.mass;
                 partB.mass = 0;
                 partB.r = 0;
@@ -263,13 +304,13 @@
     function averageColors(a, b) {
         var ratio = b.mass / a.mass;
 
-        var r = (b.color.r - a.color.r) * (ratio / 2);
-        var g = (b.color.g - a.color.g) * (ratio / 2);
-        var b = (b.color.b - a.color.b) * (ratio / 2);
+        var r = (b.color[0] - a.color[0]) * (ratio / 2);
+        var g = (b.color[1] - a.color[1]) * (ratio / 2);
+        var b = (b.color[2] - a.color[2]) * (ratio / 2);
 
-        a.color.r += r | 0;
-        a.color.g += g | 0;
-        a.color.b += b | 0;
+        a.color[0] += r | 0;
+        a.color[1] += g | 0;
+        a.color[2] += b | 0;
     }
 
     function renderItem(item) {
@@ -284,7 +325,7 @@
             return;
         }
 
-        ctx.fillStyle = "rgba(" + item.color.r + ", " + item.color.g + ", " + item.color.b + ", " + item.alpha + ")";
+        ctx.fillStyle = "rgba(" + item.color[0] + ", " + item.color[1] + ", " + item.color[2] + ", " + item.alpha + ")";
         ctx.beginPath();
         ctx.arc(xPoint, yPoint, item.r * currentScale, 0, Math.PI * 2, true);
         ctx.closePath();
@@ -300,18 +341,18 @@
     Planet.prototype.vx = 0;
     Planet.prototype.vy = 0;
 
-    Planet.prototype.color = {};
+    Planet.prototype.color = [];
     Planet.prototype.alpha = 1;
 
-    function Planet(x, y, r, color, alpha, mass) {
+    function Planet(x, y, r, color, alpha, mass, vx, vy) {
         this.x = x;
         this.y = y;
         this.r = r;
-        this.mass = mass || r * 2;
-        this.vx = Math.random() * 4 - 2;
-        this.vy = Math.random() * 4 - 2;
         this.color = color;
         this.alpha = alpha;
+        this.mass = mass || r * 2;
+        this.vx = vx;
+        this.vy = vy;
     }
 
     function scaleCanvas(canvas, ctx) {
