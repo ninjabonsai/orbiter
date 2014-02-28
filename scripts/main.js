@@ -18,8 +18,6 @@
     // shortcut to reference prototypes
     var p = Orbiter.prototype;
 
-    var that;
-
     var wasZoom = false;
 
     var canvas, ctx, planetsArray, sun, len, currentScale = 1, scaleDiff = 0;
@@ -32,15 +30,13 @@
 
     // public method
     p.init = function () {
-        that = this;
-
         planetsArray = [];
 
         canvas = document.createElement("canvas");
-        document.body.appendChild(canvas);
         canvas.width = w;
         canvas.height = h;
         canvas.style.backgroundColor = '#000';
+        document.body.appendChild(canvas);
 
         if (isTouchDevice) {
             canvas.addEventListener("touchstart", touchEvent);
@@ -213,8 +209,8 @@
         ctx.rect(0, 0, canvas.width, canvas.height);
         ctx.fill();
 
-        ctx.fillStyle = "rgba(0, 0, 0, 1)";
         ctx.beginPath();
+        ctx.fillStyle = "rgba(0, 0, 0, 1)";
         ctx.arc((halfW + sun.x * currentScale), (halfH + sun.y * currentScale), sun.r * currentScale, 0, Math.PI * 2, true);
         ctx.closePath();
         ctx.fill();
@@ -338,8 +334,8 @@
             return;
         }
 
-        ctx.fillStyle = "rgba(" + item.color[0] + ", " + item.color[1] + ", " + item.color[2] + ", " + item.alpha + ")";
         ctx.beginPath();
+        ctx.fillStyle = "rgba(" + item.color[0] + ", " + item.color[1] + ", " + item.color[2] + ", " + item.alpha + ")";
         ctx.arc(xPoint, yPoint, item.r * currentScale, 0, Math.PI * 2, true);
         ctx.closePath();
         ctx.fill();
