@@ -133,8 +133,8 @@
 
         var angle = Math.atan2(pos.yPos, pos.xPos);
 
-        if (dist < sun.r * 8) {
-            dist = sun.r * 8;
+        if (dist < sun.r * 4) {
+            dist = sun.r * 4;
         }
 
         for (var i = 0; i < l; i++) {
